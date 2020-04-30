@@ -1,0 +1,42 @@
+digraph G {
+    transition_0 [shape="box", xlabel=";true"];
+
+    A[shape="oval", xlabel="a_t; void"];
+
+    B[shape="oval", xlabel="void; b_t"];
+    
+    C[shape="oval", xlabel="void; c_t"];
+    
+    D[shape="oval", xlabel="void; void"];
+    
+    transition_1[shape="box", xlabel="A ; A.b.go"];
+    
+    transition_3[shape="box", xlabel="A; !A.b.go"];
+    
+    transition_4[shape="box", xlabel=";true"];
+    
+    A->transition_3;
+    
+    transition_3->C[xlabel="A.c"];
+    
+    transition_0->A[xlabel="void"];
+    
+    A->transition_1;
+    
+    transition_1->B[xlabel="A.b"];
+
+    transition_1->C[xlabel="A.c"];
+    
+    transition_2[shape="box", xlabel=";true"]
+    
+    C->transition_2;
+    C->transition_4;
+    D->transition_4;
+    transition_3->D[xlabel="void"];
+    B->transition_2;
+    
+    transition_4->A[xlabel="void"];
+    
+    transition_2->A[xlabel="void"]
+
+}
