@@ -1,11 +1,43 @@
 # Petri Net Interpreter
 
-## What is this?
+This is a program that is meant to interpret a Petri Net written in
+dot(a graph description language) that is a high level description of a concurrent program
+into boilerplate C code.
 
-This is a program that is meant to interpret a
-[Petri Net](https://www.techfak.uni-bielefeld.de/~mchen/BioPNML/Intro/pnfaq.html)
-written in [dot](https://en.wikipedia.org/wiki/DOT_(graph_description_language) into
-boilerplate C code.
+## The Problem
+
+Concurrent programming is hard, but there are significant benefits if
+it can be properly done.
+
+Large concurrent programs:
+  * Cons:
+    * hard / nearly impossible to inspect
+    * hard / nearly impossible to test
+    * usually have many more possible states than intended
+    * difficult to maintain due to ballooning complexity
+  * Pros:
+    * can see performance increases (especially in multi-core systems)
+    * can be much more modular / expandable
+
+## What is a Petri Net?
+
+Petri Nets are directed bipartite graphs originally made for describing chemical reactions by
+Carl Adam Petri.
+
+They consist of two types of nodes:
+ * Places (usually represented by a circle)
+ * Transitions (usually represented by a box or line)
+
+No edge is allowed to go from a place to a place or a transition to a transition (bipartite).
+
+The thing that makes Petri nets special is that tokens can go from place to place through
+transitions following a certain set of rules specified in the transitions:
+  * When a transition fires, it gives all of its output places tokens
+  * A transition only fires:
+    * if all of its input places have tokens **AND**
+    * The tokens in its input places meet the a certain criteria (usually none)
+
+**NOTE: There is no conservation of tokens**
 
 ### In the context of this framework, petri nets are interpreted as follows:
   * Nodes = Functions
