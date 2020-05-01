@@ -3,10 +3,11 @@
 ## What is this?
 
 This is a program that is meant to interpret a
-[Petri Net](https://www.techfak.uni-bielefeld.de/~mchen/BioPNML/Intro/pnfaq.html) written in
-[dot](https://en.wikipedia.org/wiki/DOT_(graph_description_language) into boilerplate C code.
+[Petri Net](https://www.techfak.uni-bielefeld.de/~mchen/BioPNML/Intro/pnfaq.html)
+written in [dot](https://en.wikipedia.org/wiki/DOT_(graph_description_language) into
+boilerplate C code.
 
-### In the context of this project, petri nets are interpreted as follows:
+### In the context of this framework, petri nets are interpreted as follows:
   * Nodes = Functions
     * Places = Processes = Threads
     * Transitions = Functions that add threads with certain data dependent on conditions
@@ -53,3 +54,15 @@ perspective of a petri net.
 
 ## Examples
   See `example.dot` for an example a valid Petri Net in dot.
+
+## TODOs
+
+  * Add Linux support (both dynamic and static memory)
+  * Add FreeRTOS support (static memory)
+  * Add ROS bridge
+  * Add dummy Place support (so dummy threads aren't actually run, but rather just their
+  output semaphores' incremented)
+  * Add Non-deterministic petri-net warnings / erros
+  * Add petri net simulation to find if a net is likely unbound
+  * Add subgraph support as namespaces for C++ compliant systems
+  * Add support for linking together of dot files to make a larger net.
