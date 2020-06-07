@@ -1,6 +1,6 @@
 __pycache__
 test/objects/*.o
-test/header.h
-test/source.c
+test/objects/*.c
+test/objects/*.h
 test/main
 *.swp
