@@ -1,5 +1,5 @@
 __pycache__
-test/objects/*
+test/objects/*.o
 test/header.h
 test/source.c
 test/main
