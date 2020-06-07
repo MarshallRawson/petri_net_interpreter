@@ -1,33 +1,21 @@
 #!/usr/bin/env python3
 from abc import ABC, abstractmethod
-
+from graph_entities import Place, Transition
 
 class OsFeature(ABC):
   def __init__(self, parent):
     self.parent = parent
 
-  @staticmethod
   @abstractmethod
-  def _prototype(name):
-    pass
-
   def prototype(self):
-    return self._prototype(self.name)
-
-  @staticmethod
-  def _define(name):
-    return ''
+    pass
 
   def define(self):
-    return self._define(self.name)
+    return ''
 
-  @staticmethod
   @abstractmethod
-  def _initialize(name):
-    pass
-
   def initialize(self):
-    return self._initialize(self.name)
+    pass
 
 
 class Debug(OsFeature):
@@ -41,7 +29,6 @@ class Debug(OsFeature):
     return len(all_names) + len(self.parent.places.keys())*6
 
   def get_debug_state(self):
-
     s = '// Get Debug state\n'
     s += 'char debug_state[' + str(self.string_len()) + '];\n'
     s += 'snprintf(debug_state, ' + str(self.string_len())+ ', "'
@@ -55,29 +42,19 @@ class Debug(OsFeature):
     s += ');\n'
     return s
 
-  @staticmethod
-  def _prototype():
+  def prototype(self):
     return ''
 
-  @staticmethod
-  def _initialize():
+  def initialize(self):
     return ''
 
   def call(self, give_string):
-    return give_string + ';\n'
-
-  @staticmethod
-  def _define():
-    return ''
+    return give_string
 
 
 class ProccessOutput(OsFeature):
   def __init__(self, parent):
     super().__init__(parent)
-
-  @abstractmethod
-  def get_status(self):
-    pass
 
   @abstractmethod
   def is_ready(self):
@@ -100,48 +77,27 @@ class InterProccessCommunication(ProccessOutput):
   def give(self, val):
     return self.enqueue(val)
 
-  @staticmethod
-  @abstractmethod
-  def _enqueue(name, val):
-    pass
+  def take(self, val):
+    return self.dequeue(val)
 
+  @abstractmethod
   def enqueue(self, val):
-    return self._enqueue(self.name, val)
-
-  @staticmethod
-  @abstractmethod
-  def _dequeue(name):
     pass
 
-  def dequeue(self):
-    return self._dequeue(self.name)
+  @abstractmethod
+  def dequeue(self, val):
+    pass
 
   def is_ready(self):
     return self.check_for_new_data()
 
-  @staticmethod
   @abstractmethod
-  def _check_for_new_data(name):
-    pass
-
   def check_for_new_data(self):
-    return self._check_for_new_data(self.name)
-
-  @staticmethod
-  @abstractmethod
-  def _peak(name):
     pass
 
-  def peak(self):
-    return self._peak(self.name)
-
-  @staticmethod
   @abstractmethod
-  def _get_size(name):
-    pass
-
   def get_size(self):
-    return self._get_size(self.name)
+    pass
 
   def get_status(self):
     return self.get_size()
@@ -151,42 +107,27 @@ class InterProccessCommunication(ProccessOutput):
 
 
 class Semaphore(ProccessOutput):
-  def __init__(self, place):
+  def __init__(self, place, suffix='_OUT_SEMAPHORE'):
     super().__init__(place)
-    self.name = str(place.node) + '_OUT_SEMAPHORE'
-
-  def prototype(self):
-    return self._prototype(self.name)
+    self.name = str(place.node) + suffix
 
   def give(self, val):
     return self.signal()
 
-  @staticmethod
   @abstractmethod
-  def _signal(name):
-    pass
-
   def signal(self):
-    return self._signal(self.name)
+    pass
 
   def take(self, val):
-    return self.decrement()
+    return self.wait()
 
-  @staticmethod
   @abstractmethod
-  def _wait(name):
-    pass
-
   def wait(self):
-    return self._wait(self.name)
-
-  @staticmethod
-  @abstractmethod
-  def _get_value(name):
     pass
 
+  @abstractmethod
   def get_value(self):
-    return self._get_value(self.name)
+    pass
 
   def get_status(self):
     return self.get_value()
@@ -194,26 +135,24 @@ class Semaphore(ProccessOutput):
   def is_ready(self):
     return '(' + self.get_value() + ' > 0)'
 
-  @staticmethod
-  @abstractmethod
-  def _decrement(name):
-    pass
-
-  def decrement(self):
-    return self._decrement(self.name)
-
   def __str__(self):
     return self.name
 
 
 class OperatingSystem(ABC):
-  def __init__(self, ipc, sem, debug=Debug):
+  def __init__(self, ipc, sem, place, transition, debug=Debug):
     self.ipc = ipc
     if not issubclass(ipc, InterProccessCommunication):
       raise Exception('ipc must inherit from InterProccessCommunication')
     self.sem = sem
     if not issubclass(sem, Semaphore):
       raise Exception('sem must inherit from Semaphore')
+    self.place = place
+    if not issubclass(place, Place):
+      raise Exception('place must inherit from Place')
+    self.transition = transition
+    if not issubclass(transition, Transition):
+      raise Exception('transition must inherit from Transition')
     self.debug = debug
     if not issubclass(debug, Debug):
       raise Exception('debug must inherit from Debug')
@@ -221,6 +160,10 @@ class OperatingSystem(ABC):
   @staticmethod
   def place_body_name(place):
     return str(place.node) + '_body'
+
+  @staticmethod
+  def place_wrapper_name(place):
+    return str(place.node) + '_wrapper'
 
   @staticmethod
   def header_start():
@@ -242,7 +185,8 @@ class OperatingSystem(ABC):
 
   @classmethod
   @abstractmethod
-  def add_thread(place, param):
+  def add_thread(cls, place, param):
     pass
 
-
+  def initialize(self):
+    return ''

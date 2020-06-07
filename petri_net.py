@@ -7,9 +7,13 @@ from graph_entities import Edge
 from os_features import OperatingSystem
 from graph_entities import Place, Transition
 
+class DummyPlace:
+  def __init__(self, name):
+    self.node = name
+    self.name = name
+
 class PetriNet(object):
-  def __init__(self, dot_file, header_file, source_file, types_file,
-               os, place, transition):
+  def __init__(self, dot_file, header_file, source_file, types_file, os):
     self.header_file = header_file
     self.source_file = source_file
     self.types_file = types_file
@@ -23,19 +27,23 @@ class PetriNet(object):
       raise Exception('os must inherit from OperatingSystem')
     self.os = os
 
-    if not issubclass(place, Place):
+    if not issubclass(os.place, Place):
       raise Exception('place must inherit from Place')
-    self.place = place
+    self.place = os.place
 
-    if not issubclass(transition, Transition):
+    if not issubclass(os.transition, Transition):
       raise Exception('transition must inherit from Transition')
-    self.transition = transition
+    self.transition = os.transition
 
     self.debug = self.os.debug(self)
 
     self.transitions = {}
     self.places = {}
     self.parse_graph()
+
+    # needed for generating C code
+    dummy_place = DummyPlace(self.transition_semaphore())
+    self.transition_sem = self.os.sem(dummy_place)
 
   def parse_graph(self):
     #TODO: check for parallel edges
@@ -97,18 +105,18 @@ class PetriNet(object):
       header += place.c_header()
 
     header += '// Transitions:\n'
-    header += self.os.sem._prototype(self.transition_semaphore()) + ';\n'
+    header += self.transition_sem.prototype() + ';\n'
     for transition in self.transitions.values():
       header += transition.c_header()
 
     header += '// Start Thread\n'
-    header += 'void ' + self.start_thread()  + '();\n'
+    header += 'void* ' + self.start_thread()  + '();\n'
 
     header += '\n// Petri Net Init:\n'
     header += self.net_prototype() + ';\n'
     header += self.os.header_file_end() + '\n'
 
-    header += self.debug._prototype()
+    header += self.debug.prototype()
 
     # make source
     source = ''
@@ -123,24 +131,25 @@ class PetriNet(object):
       source += v.c_source()
 
     source += '// Start Thread\n'
-    source += 'void ' + self.start_thread()  + '()\n'
+    source += 'void* ' + self.start_thread()  + '()\n'
     source += '{\n'
     source += self.transition0() + '();\n'
     source += self.os.kill_self() + ';\n'
-    source += '}\n'
+    source += 'return 0;\n'
+    source += '}\n\n'
 
-    source += self.debug._define()
+    source += self.debug.define()
 
     source += '//Petri Net Init:\n'
     source += self.net_prototype() + '\n'
     source += '{\n'
-    source += self.debug._initialize()
-    source += self.os.sem._initialize(self.transition_semaphore(), '1') + ';\n'
+    source += self.os.initialize()
+    source += self.debug.initialize()
+    source += self.transition_sem.initialize(1)
     for place in self.places.values():
-      source += place.output.initialize() + ';\n'
-    source += self.os.add_thread(self.start_thread(), 'void') + ';\n'
+      source += place.initialize()
+    source += self.os.add_thread(self.start_thread(), 'void')
     source += '}\n'
-
 
     return header, source
 
