@@ -17,6 +17,7 @@ class Node(GraphEntity):
     self.node = node
     self.ins = {}
     self.outs = {}
+    self.name = str(node)
     super().__init__(parent)
 
   def add_out_edge(self, edge):
@@ -63,38 +64,18 @@ class Place(Node):
     else:
       self.output = self.parent.os.ipc(self)
     self.body_name = self.parent.os.place_body_name(self)
+    self.wrapper_name = self.parent.os.place_wrapper_name(self)
 
+  def initialize(self):
+    return self.output.initialize()
+
+  @abstractmethod
   def c_header(self):
-    h = '// ' + str(self.node) + '\n'
-    h += self.output.prototype() + ';\n'
-    h += 'void ' + str(self.node) + '(' + self.in_type + ');\n'
-    h += self.out_type + ' ' + self.body_name + '(' + self.in_type + ');\n'
-    h += '\n'
-    return h
+    pass
 
+  @abstractmethod
   def c_source(self):
-    s = '// ' + str(self.node) + '\n'
-    #define our out incase it needs it
-    s += self.output.define() + '\n'
-    if self.in_type != 'void':
-      s += 'void ' + str(self.node) + '(' + self.in_type + ' in_data)\n'
-      in_data = 'in_data'
-    else:
-      s += 'void ' + str(self.node) + '()\n'
-      in_data = ''
-    s += '{\n'
-
-    if self.out_type != 'void':
-      s += self.out_type + ' ret = ' + self.body_name + '(' + in_data + ');\n'
-    else:
-      s += self.body_name + '(' + in_data + ');\n'
-    s += self.parent.debug.call(self.output.give('ret'))
-    for edge in self.outs.values():
-      transition = self.parent.transitions[str(edge.edge[1])]
-      s += str(transition.node) + '();\n'
-    s += self.parent.os.kill_self() + ';\n'
-    s += '}\n\n'
-    return s
+    pass
 
   def __str__(self):
     ret = super().__str__() + '\n in_type:\n' + self.in_type + \
@@ -113,54 +94,17 @@ class Place(Node):
     return 'oval'
 
 
-
 class Transition(Node):
   def __init__(self, node, parent):
     super().__init__(node, parent)
-    self.condition_needs = ' '.join(node.attr['xlabel'].split(self.parent.delim())[0].split())
-    self.condition = node.attr['xlabel'].split(self.parent.delim())[1]
 
+  @abstractmethod
   def c_header(self):
-    header = '// ' + str(self.node) + '\n'
-    header += 'void ' + str(self.node) + '();\n\n'
-    return header
+    pass
 
+  @abstractmethod
   def c_source(self):
-    s = '// ' + str(self.node) + '\n'
-    s += 'void ' + str(self.node) + '()\n'
-    s += '{\n'
-    s += '  ' + self.parent.os.sem._wait(self.parent.transition_semaphore()) + ';\n'
-    s += '  if('
-    for edge in self.ins.values():
-      place = self.parent.places[str(edge.edge[0])]
-      s += place.output.is_ready() + '&&\n'
-    s += '  true)\n'
-    s += '  {\n'
-    # check condition
-    for need in self.condition_needs:
-      place = self.parent.places[need]
-      s += '    ' + place.out_type + ' ' +  need + ' = ' + place.output.peak() + ';\n'
-    s += '    if('
-    s += self.condition + ')\n'
-    s += '    {\n'
-    for edge in self.ins.values():
-      place = self.parent.places[str(edge.edge[0])]
-      s += '      ' + place.output.take(str(place.node)) + ';\n'
-    for edge in self.outs.values():
-      place = self.parent.places[str(edge.edge[1])]
-      s += '      ' + self.parent.os.add_thread(place, edge.var_name) + ';\n'
-    s += '    }\n'
-    s += '  }\n'
-    s += self.parent.os.sem._signal(self.parent.transition_semaphore()) + ';\n'
-    s += '}\n\n'
-    return s
-
-  def __str__(self):
-    return super().__str__() + '\n Condition:\n' + self.condition + '\n'
-
-  def check_xlabel(self):
-    super().check_xlabel()
-    return
+    pass
 
   @staticmethod
   def shape():
@@ -171,7 +115,12 @@ class Edge(GraphEntity):
   def __init__(self, edge, parent):
     self.edge = edge
     super().__init__(parent)
-    self.var_name = edge.attr['xlabel']
+    if self.edge[0].attr['shape'] == self.parent.place.shape():
+      self.condition = edge.attr['xlabel']
+      if self.condition == '':
+        self.condition = 'true'
+    elif self.edge[1].attr['shape'] == self.parent.place.shape():
+      self.var_name = edge.attr['xlabel']
 
   def check_xlabel(self):
     if self.edge[1].attr['shape'] == self.parent.transition.shape():
@@ -195,6 +144,12 @@ class Edge(GraphEntity):
       raise Exception("%s: Edge cannot connect two alike nodes"%str(self.edge))
 
   def __str__(self):
-    ret = str(self.edge) + '\n' + self.var_name
+    ret = str(self.edge) + '\n'
+    if hasattr(self, 'var_name'):
+      ret += 'Moves: ' + self.var_name + '\n'
+    elif hasattr(self, 'condition'):
+      ret += 'Only fires when ' + self.condition + '\n'
+    else:
+      ret += 'Oops, this edge is broke'
     return ret
 

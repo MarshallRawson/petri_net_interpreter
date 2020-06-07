@@ -42,9 +42,10 @@ transitions following a certain set of rules specified in the transitions:
 ### In the context of this framework, petri nets are interpreted as follows:
   * Nodes = Functions
     * Places = Processes = Threads
-    * Transitions = Functions that add threads with certain data dependent on conditions
+    * Transitions = Functions that add threads with certain arguments dependent
+     on if all the input places have at least *one* processed token
   * Edges = Function calls / Thread Adding
-    * Place -> Transition = Call the transition function(no sub data field should be specified)
+    * Place -> Transition = Call the transition function if the condition is meet
     * Transition -> Place = Add thread with a certain subset of the available data
   from one of the Transition's input Places
 
@@ -62,7 +63,8 @@ perspective of a petri net.
   it to interpret are also operating system agnostic, making system migration less painful.
 
   * Supported Operating Systems:
-    * G8RTOS (OS made in Micro Processors 2 at UF (not Open Source-able :-( ))
+    * Linux
+    * G8RTOS (OS made in Micro Processors 2 at UF (closed source))
 
 ### Dynamic / Static Memory Agnostic:
 
@@ -85,16 +87,24 @@ perspective of a petri net.
   purpose, so this utility should be used at the process level description.
 
 ## Examples
-  See `example.dot` for an example a valid Petri Net in dot.
+  ### Linux / Mac
+    1. navigate to the `test` directory of this repo
 
-## TODOs
+      `cd test`
 
-  * Add Linux support (both dynamic and static memory)
-  * Add FreeRTOS support (static memory)
+    2. compile the program (this will run the petri net interpreter)
+      `make`
+
+    3. run the program
+      `./main`
+
+## TODOs (in order of priority)
+  * Add petri net simulation to find if a net is likely unbound.
+  * Native dynamic memory usage in linux
   * Add ROS bridge
-  * Add dummy Place support (so dummy threads aren't actually run, but rather just their
+  * Add FreeRTOS support (static memory)
+  * Add dummy Place support (so dummy threads aren't actually added, but rather just their
   output semaphores' incremented)
-  * Add Non-deterministic petri-net warnings / erros
-  * Add petri net simulation to find if a net is likely unbound
-  * Add subgraph support as namespaces for C++ compliant systems
+  * Add Non-deterministic petri-net warnings / erros.
+  * Add subgraph support as namespaces for C++ compliant systems.
   * Add support for linking together of dot files to make a larger net.
