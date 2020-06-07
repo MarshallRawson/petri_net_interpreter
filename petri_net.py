@@ -99,7 +99,7 @@ class PetriNet(object):
     # make header
     header = self.os.header_start() + '\n'
     header += self.os.includes() + '\n'
-    header += '#include "' + self.types_file.split('/')[-1] + '"\n'
+    header += '#include "' + self.types_file + '"\n'
     header += '// Places:\n'
     for place in self.places.values():
       header += place.c_header()
