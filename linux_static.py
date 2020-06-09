@@ -59,7 +59,7 @@ class MessageQueue(InterProccessCommunication):
     ret =  'if (-1 == msgsnd(' + self.name + ', &' + var_name + ',\n'
     ret += 'sizeof(' + self.data_type + ') + sizeof(long), 0))\n'
     ret += '{\n'
-    ret += '  perror("' + self.name + ' sending ' + var_name + ' failed\\n");\n'
+    ret += '  perror("' + self.name + ' sending ' + var_name + ' failed");\n'
     ret += '  pthread_exit(NULL);\n'
     ret += '}\n'
     return ret
@@ -75,7 +75,7 @@ class MessageQueue(InterProccessCommunication):
     ret += 'sizeof(' + self.data_type + ') + sizeof(long), 1,\n'
     ret += '0))\n'
     ret += '{\n'
-    ret += '  perror("' + self.name + ' reciving ' + var + ' failed\\n");\n'
+    ret += '  perror("' + self.name + ' reciving ' + var + ' failed");\n'
     ret += '  pthread_exit(NULL);\n'
     ret += '}\n'
     ret += var + ' = ' + '&(' + var + '_buf.data);\n'
@@ -84,7 +84,7 @@ class MessageQueue(InterProccessCommunication):
   def get_stats(self):
     ret =  'if (-1 == msgctl(' + self.name + ', IPC_STAT, ' + '&' + self.buf + '))\n'
     ret += '{\n'
-    ret += '  perror("' + self.name + ' getting stats failed\\n");\n'
+    ret += '  perror("' + self.name + ' getting stats failed");\n'
     ret += '  pthread_exit(NULL);\n'
     ret += '}\n'
     return ret
@@ -92,7 +92,7 @@ class MessageQueue(InterProccessCommunication):
   def set_stats(self):
     ret =  'if (-1 == msgctl(' + self.name + ', IPC_SET, ' + '&' + self.buf + '))\n'
     ret += '{\n'
-    ret += '  perror("' + self.name + ' setting stats failed\\n");\n'
+    ret += '  perror("' + self.name + ' setting stats failed");\n'
     ret += '  pthread_exit(NULL);\n'
     ret += '}\n'
     return ret
@@ -117,7 +117,7 @@ class MessageQueue(InterProccessCommunication):
     ret += self.name + ' = msgget(' + self.name + '_key, 0600 | IPC_CREAT);\n'
     ret += 'if (' + self.name + ' == -1)\n'
     ret += '{\n'
-    ret += '  perror("' + self.name + ' message queue creation failed\\n");\n'
+    ret += '  perror("' + self.name + ' message queue creation failed");\n'
     ret += '  pthread_exit(NULL);\n'
     ret += '}\n'
     ret += self.get_stats()
@@ -126,6 +126,12 @@ class MessageQueue(InterProccessCommunication):
     ret += '}\n'
     return ret
 
+  def close(self):
+    ret =  'if (-1 == msgctl(' + self.name + ', IPC_RMID, NULL))\n'
+    ret += '{\n'
+    ret += '  perror("Failed to close ' + self.name + '");\n'
+    ret += '}\n'
+    return ret
 
 class LinuxSem(Semaphore):
   def __init__(self, place, **kwargs):
@@ -141,7 +147,7 @@ class LinuxSem(Semaphore):
   def initialize(self, val=0):
     ret =  'if (-1 == sem_init(&' + self.name + ', 0, ' + str(val) + '))\n'
     ret += '{\n'
-    ret += '  perror("' + self.name + ' semaphore initialization failed\\n");\n'
+    ret += '  perror("' + self.name + ' semaphore initialization failed");\n'
     ret += '  pthread_exit(NULL);\n'
     ret += '}\n'
     return ret
@@ -154,7 +160,7 @@ class LinuxSem(Semaphore):
   def get_value(self, var):
     ret =  'if (-1 == sem_getvalue(&' + self.name + ', &' + var + '))\n'
     ret += '{\n'
-    ret += '  perror("' + self.name + ' semaphore get value failed\\n");\n'
+    ret += '  perror("' + self.name + ' semaphore get value failed");\n'
     ret += '  pthread_exit(NULL);\n'
     ret += '}\n'
     return ret
@@ -162,7 +168,7 @@ class LinuxSem(Semaphore):
   def signal(self):
     ret =  'if (-1 == sem_post(&' + self.name + '))\n'
     ret += '{\n'
-    ret += '  perror("signaling ' + self.name + ' failed\\n");\n'
+    ret += '  perror("signaling ' + self.name + ' failed");\n'
     ret += '  pthread_exit(NULL);\n'
     ret += '}\n'
     return ret
@@ -170,11 +176,17 @@ class LinuxSem(Semaphore):
   def wait(self):
     ret =  'if (-1 == sem_wait(&' + self.name  + '))\n'
     ret += '{\n'
-    ret += '  perror("waiting on ' + self.name + ' failed\\n");\n'
+    ret += '  perror("waiting on ' + self.name + ' failed");\n'
     ret += '  pthread_exit(NULL);\n'
     ret += '}\n'
     return ret
 
+  def close(self):
+    ret =  'if (-1 == sem_close(&' + self.name + '))\n'
+    ret += '{\n'
+    ret += '  perror("Failed to close ' + self.name + '");\n'
+    ret += '}\n'
+    return ret
 
 class LinuxStaticPlace(Place):
   def __init__(self, node, parent):
@@ -188,6 +200,12 @@ class LinuxStaticPlace(Place):
     ret =  self.output.initialize()
     if self.in_type != 'void':
       ret += self.in_data_copy_sem.initialize()
+    return ret
+
+  def close(self):
+    ret =  self.output.close()
+    if hasattr(self, 'in_data_copy_sem'):
+      ret += self.in_data_copy_sem.close()
     return ret
 
   def c_header(self):
@@ -240,7 +258,7 @@ class LinuxStaticPlace(Place):
     s += 'if (!called_transition)\n'
     s += '{\n'
     s += '  perror("' + self.name + ' failed to call any transitions and therfore '
-    s += 'the program is in a blocked state it will not recover from\\n");\n'
+    s += 'the program is in a blocked state it will not recover from");\n'
     s += '}\n'
     s += self.parent.os.kill_self() + ';\n'
     s += '}\n\n'
@@ -267,7 +285,7 @@ class LinuxStaticTransition(Transition):
     s += '  if('
     for edge in self.ins.values():
       place = self.parent.places[str(edge.edge[0])]
-      s += '(' + str(place.node) + '_is_ready > 0) &&\n'
+      s += '(' + str(place.node) + '_is_ready) &&\n'
     s += '  true)\n'
     s += '  {\n'
     for edge in self.ins.values():
@@ -277,11 +295,11 @@ class LinuxStaticTransition(Transition):
       place = self.parent.places[str(edge.edge[1])]
       s += '    ' + self.parent.os.add_thread(place.wrapper_name, edge.var_name)
     s += '  }\n'
-    s += '  ' + self.parent.transition_sem.signal()
     for edge in self.outs.values():
       place = self.parent.places[str(edge.edge[1])]
       if hasattr(place, 'in_data_copy_sem'):
         s += place.in_data_copy_sem.wait()
+    s += '  ' + self.parent.transition_sem.signal()
     s += '}\n\n'
     return s
 
@@ -318,12 +336,26 @@ class LinuxStatic(OperatingSystem):
       name = place
     ret =  '{\n'
     ret += 'pthread_t ' + name + '_pthread;\n'
-    ret += 'pthread_create(&' + name + '_pthread, NULL, &' + place + ', '
+    ret += 'if (0 != pthread_create(&' + name + '_pthread, NULL, &' + place + ', '
     if param == 'void':
       ret += 'NULL'
     else:
       ret += '&' + param
-    ret += ');\n'
+    ret += '))\n'
+    ret += '{\n'
+    ret += '  perror("Failed to add thread: ' + name + '");\n'
+    ret += '  pthread_exit(NULL);\n'
+    ret += '}\n'
+    ret += 'if (0 != pthread_detach(' + name + '_pthread))\n'
+    ret += '{\n'
+    ret += '  perror("Failed to detach thread: ' + name + '");\n'
+    ret += '  pthread_exit(NULL);\n'
+    ret += '}\n'
+    ret += '//if (0 != pthread_setname_np(' + name + '_pthread, "' + name + '"))\n'
+    ret += '//{\n'
+    ret += '//  perror("Failed to name thread: ' + name + '");\n'
+    ret += '//  pthread_exit(NULL);\n'
+    ret += '//}\n'
     ret += '}\n'
     return ret
 

@@ -90,6 +90,8 @@ class SharedBuffer(InterProccessCommunication):
   def get_size(self):
     return self.name + '.GetSize(&' + self.name + ')'
 
+  def close(self):
+    return ''
 
 class G8rtosSem(Semaphore):
   def __init__(self, place):
@@ -113,6 +115,8 @@ class G8rtosSem(Semaphore):
   def take(self, val):
     return self.wait()
 
+  def close(self):
+    return ''
 
 class G8rtosPlace(Place):
   def __init__(self, node, parent):

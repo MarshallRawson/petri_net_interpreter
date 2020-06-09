@@ -68,6 +68,9 @@ class ProccessOutput(OsFeature):
   def give(self, val):
     pass
 
+  @abstractmethod
+  def close(self):
+    pass
 
 class InterProccessCommunication(ProccessOutput):
   def __init__(self, place):

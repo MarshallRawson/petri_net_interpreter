@@ -109,14 +109,17 @@ class PetriNet(object):
     for transition in self.transitions.values():
       header += transition.c_header()
 
-    header += '// Start Thread\n'
+    header += '\n// Start Thread\n'
     header += 'void* ' + self.start_thread()  + '();\n'
 
     header += '\n// Petri Net Init:\n'
-    header += self.net_prototype() + ';\n'
-    header += self.os.header_file_end() + '\n'
+    header += 'void ' + self.init_function() + '();\n'
+
+    header += '\n//Petri Net Close:\n'
+    header += 'void ' + self.close_function() + '();\n'
 
     header += self.debug.prototype()
+    header += self.os.header_file_end() + '\n'
 
     # make source
     source = ''
@@ -141,7 +144,7 @@ class PetriNet(object):
     source += self.debug.define()
 
     source += '//Petri Net Init:\n'
-    source += self.net_prototype() + '\n'
+    source += 'void ' + self.init_function() + '()\n'
     source += '{\n'
     source += self.os.initialize()
     source += self.debug.initialize()
@@ -151,6 +154,13 @@ class PetriNet(object):
     source += self.os.add_thread(self.start_thread(), 'void')
     source += '}\n'
 
+    source += '//Petri Net Close:\n'
+    source += 'void ' + self.close_function() + '()\n'
+    source += '{\n'
+    for place in self.places.values():
+      source += place.close()
+    source += self.transition_sem.close()
+    source += '}\n'
     return header, source
 
   def to_files(self):
@@ -175,10 +185,13 @@ class PetriNet(object):
     return 'PETRI_TRANSITION_SEMAPHORE'
 
   @staticmethod
-  def net_prototype():
-    return 'void PetriNet_Init()'
+  def init_function():
+    return 'PetriNet_Init'
 
   @staticmethod
   def start_thread():
-    return 'start_thread'
+    return 'PetriNet_StartThread'
 
+  @staticmethod
+  def close_function():
+    return 'PetriNet_Close'
