@@ -1,6 +1,5 @@
 __pycache__
-test/objects/*.o
-test/objects/*.c
-test/objects/*.h
+test/objects/*
+!test/objects/.gitkeep
 test/main
 *.swp

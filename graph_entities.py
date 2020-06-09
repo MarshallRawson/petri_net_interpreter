@@ -69,6 +69,9 @@ class Place(Node):
   def initialize(self):
     return self.output.initialize()
 
+  def close(self):
+    return self.output.close()
+
   @abstractmethod
   def c_header(self):
     pass
