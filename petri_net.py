@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-import networkx as nx
-from networkx.drawing import nx_agraph
 import pygraphviz as pgv
 import pydot
 from graph_entities import Edge
 from os_features import OperatingSystem
 from graph_entities import Place, Transition
+from state_graph import StateGraph
+
 
 class DummyPlace:
   def __init__(self, name):
     self.node = name
     self.name = name
+
 
 class PetriNet(object):
   def __init__(self, dot_file, header_file, source_file, types_file, os):
@@ -43,7 +44,7 @@ class PetriNet(object):
 
     # needed for generating C code
     dummy_place = DummyPlace(self.transition_semaphore())
-    self.transition_sem = self.os.sem(dummy_place)
+    self.transition_sem = self.os.sem(dummy_place, suffix='')
 
   def parse_graph(self):
     #TODO: check for parallel edges
@@ -84,6 +85,8 @@ class PetriNet(object):
         if str(node) not in self.places.keys():
           self.places[str(node)] = self.place(node, self)
         self.places[str(node)].add_out_edge(i)
+
+    self.state_graph = StateGraph(self)
 
 
   def __str__(self):
@@ -195,3 +198,7 @@ class PetriNet(object):
   @staticmethod
   def close_function():
     return 'PetriNet_Close'
+
+  @staticmethod
+  def max_tokens():
+    return 32

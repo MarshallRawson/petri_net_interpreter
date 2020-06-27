@@ -20,19 +20,28 @@ class PrintDebug(Debug):
     s = '// Get Debug state\n'
     s += 'char debug_state[' + str(self.string_len()) + '];\n'
     for place in self.parent.places.values():
-      s += 'int ' + place.name + ';\n'
-      s += place.output.get_status(place.name)
+      s += 'int ' + place.name + '_in_progress;\n'
+      s += place.in_progress_sem.get_value(place.name + '_in_progress')
+      s += 'int ' + place.name + '_finished;\n'
+      s += place.output.get_status(place.name + '_finished')
     s += 'snprintf(debug_state, ' + str(self.string_len())+ ', "'
     for name in self.parent.places.keys():
-      s += name + ': %d\\n'
+      s += name + ' in progress: %d, finished: %d total: %d\\n'
     s += '\\n", '
     for place in self.parent.places.values():
-      s += place.name + ', '
+      s += place.name + '_in_progress, '
+      s += place.name + '_finished, '
+      s += place.name + '_finished + ' + place.name + '_in_progress, '
     i = s.rfind(',')
     s = s[:i] + s[i+1:]
     s += ');\n'
     return s
 
+  def string_len(self):
+    all_names = ''
+    for name in self.parent.places.keys():
+      all_names += name
+    return len(all_names)*48 + len(self.parent.places.keys())*6
 
 class MessageQueue(InterProccessCommunication):
   def __init__(self, place):
@@ -188,6 +197,7 @@ class LinuxSem(Semaphore):
     ret += '}\n'
     return ret
 
+
 class LinuxStaticPlace(Place):
   def __init__(self, node, parent):
     super().__init__(node, parent)
@@ -195,11 +205,13 @@ class LinuxStaticPlace(Place):
     # copying data is kinda the only way to solve this without dynamic memory I think
     if self.in_type != 'void':
       self.in_data_copy_sem = LinuxSem(self, suffix='_IN_DATA_COPY_SEMAPHORE')
+    self.in_progress_sem = LinuxSem(self, suffix='_IN_PROGRESS_SEMAPHORE')
 
   def initialize(self):
     ret =  self.output.initialize()
     if self.in_type != 'void':
       ret += self.in_data_copy_sem.initialize()
+    ret += self.in_progress_sem.initialize()
     return ret
 
   def close(self):
@@ -213,6 +225,7 @@ class LinuxStaticPlace(Place):
     h += self.output.prototype() + ';\n'
     if self.in_type != 'void':
       h += self.in_data_copy_sem.prototype() + ';\n'
+    h += self.in_progress_sem.prototype() + ';\n'
     h += 'void* ' + self.wrapper_name + '(void* parg);\n'
     h += self.out_type + ' ' + self.body_name + '(' + self.in_type + ');\n'
     h += '\n'
@@ -244,7 +257,8 @@ class LinuxStaticPlace(Place):
       s += 'ret.data = ' + self.body_name + '(' + in_data + ');\n'
     else:
       s += self.body_name + '(' + in_data + ');\n'
-    s += self.parent.debug.call(self.output.give('ret'))
+    s += self.parent.debug.call(self.output.give('ret') + self.in_progress_sem.wait())
+
     s += 'bool called_transition = false;\n'
     if self.out_type != 'void':
       s += self.out_type + '* ' + self.name + ' = &ret.data;\n'
@@ -293,6 +307,7 @@ class LinuxStaticTransition(Transition):
       s += '    ' + place.output.take(str(place.node))
     for edge in self.outs.values():
       place = self.parent.places[str(edge.edge[1])]
+      s += '    ' + place.in_progress_sem.signal()
       s += '    ' + self.parent.os.add_thread(place.wrapper_name, edge.var_name)
     s += '  }\n'
     for edge in self.outs.values():
