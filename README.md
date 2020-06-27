@@ -87,22 +87,32 @@ perspective of a petri net.
   purpose, so this utility should be used at the process level description.
 
 ## Examples
-  ### Linux / Mac
-    1. navigate to the `test` directory of this repo
+### Linux / Mac
+  1. navigate to the `test` directory of this repo
 
-      `cd test`
+    cd test
 
-    2. compile the program (this will run the petri net interpreter)
-      `make`
+  1. compile the program (this will run the petri net interpreter)
 
-    3. run the program
-      `./main`
+    make
+
+  1. view the state graph of the program
+
+    display ./objects/state_graph.png
+
+  1. run the program
+
+    ./main
+
+
+### Windows
+  There is currently no Windows support
 
 ## TODOs (in order of priority)
-  * Add petri net simulation to find if a net is likely unbound.
   * Native dynamic memory usage in linux
   * Add ROS bridge
   * Add FreeRTOS support (static memory)
+  * Add Markov Chain analysis to return faster, but less exact characteristics of state graph.
   * Add dummy Place support (so dummy threads aren't actually added, but rather just their
   output semaphores' incremented)
   * Add Non-deterministic petri-net warnings / erros.
