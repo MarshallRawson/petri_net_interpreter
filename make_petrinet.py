@@ -20,6 +20,11 @@ if __name__ == '__main__':
                                       '  G8RTOS Options: uart, wifi\n' +\
                                       '  linux_static Options: print',
                       required=False)
+  parser.add_argument('--state_graph_type', help='OPTIONAL: type of output from state graph.\n' +\
+                                                 '  Options: dot, png',
+                      required=False)
+  parser.add_argument('--state_graph_output', help='OPTIONAL: name of the out file of state graph.',
+                      required=False)
   args = parser.parse_args()
 
   dot = args.dot
@@ -53,3 +58,16 @@ if __name__ == '__main__':
     raise Exception('%s is not a supported OS'%os)
 
   net.to_files()
+  if args.state_graph_type:
+    state_graph_file = args.state_graph_output
+    state_graph_type = args.state_graph_type
+    if state_graph_file is None:
+      raise Exception('state_graph_output file is not specified')
+    net.state_graph.generate()
+    if state_graph_type == 'dot':
+      net.state_graph.to_dot(state_graph_file)
+    elif state_graph_type == 'png':
+      net.state_graph.to_png(state_graph_file)
+    else:
+      raise Exception('%s is Not supported. Supported are dot, png'%state_graph_type)
+

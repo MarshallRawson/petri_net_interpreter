@@ -21,10 +21,10 @@ class Node(GraphEntity):
     super().__init__(parent)
 
   def add_out_edge(self, edge):
-      self.outs[str(edge)] = edge
+      self.outs[str(edge.edge[1])] = edge
 
   def add_in_edge(self, edge):
-      self.ins[str(edge)] = edge
+      self.ins[str(edge.edge[0])] = edge
 
   def __str__(self):
     ret = str(self.node) + '\n outs:'
@@ -151,7 +151,7 @@ class Edge(GraphEntity):
     if hasattr(self, 'var_name'):
       ret += 'Moves: ' + self.var_name + '\n'
     elif hasattr(self, 'condition'):
-      ret += 'Only fires when ' + self.condition + '\n'
+      ret += 'Fires when ' + self.condition + '\n'
     else:
       ret += 'Oops, this edge is broke'
     return ret
