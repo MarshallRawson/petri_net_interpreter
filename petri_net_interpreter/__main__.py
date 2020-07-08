@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import sys
 import argparse
-from petri_net import PetriNet
-from os_features import Debug
+from petri_net_interpreter.petri_net import PetriNet
+from petri_net_interpreter.os_features import Debug
 
-if __name__ == '__main__':
+def main():
   parser = argparse.ArgumentParser(
                       description='Interprets dot file representing a Petri Net and generates the' +\
                                   ' corresponding C templates for G8RTOS.',
@@ -35,8 +35,8 @@ if __name__ == '__main__':
   debug = Debug
 
   if os == 'G8RTOS':
-    from G8RTOS import G8RTOS
-    from G8RTOS import UartDebug, WifiDebug
+    from petri_net_interpreter.G8RTOS import G8RTOS
+    from petri_net_interpreter.G8RTOS import UartDebug, WifiDebug
     if args.debug:
       if args.debug == 'uart':
         debug = UartDebug
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     net = PetriNet(dot, header, source, types, G8RTOS(debug))
 
   elif os == 'linux_static':
-    from linux_static import LinuxStatic, PrintDebug
+    from petri_net_interpreter.linux_static import LinuxStatic, PrintDebug
     if args.debug == 'print':
       debug = PrintDebug
     else:
@@ -71,3 +71,5 @@ if __name__ == '__main__':
     else:
       raise Exception('%s is Not supported. Supported are dot, png'%state_graph_type)
 
+if __name__ == '__main__':
+    main()

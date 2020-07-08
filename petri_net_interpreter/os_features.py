@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from abc import ABC, abstractmethod
-from graph_entities import Place, Transition
+from petri_net_interpreter.graph_entities import Place, Transition
 
 class OsFeature(ABC):
   def __init__(self, parent):
