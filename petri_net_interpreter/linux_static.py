@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-from os_features import InterProccessCommunication, Semaphore, OperatingSystem, Debug
-from graph_entities import Place, Transition
+from petri_net_interpreter.os_features \
+  import InterProccessCommunication, Semaphore, OperatingSystem, Debug
+from petri_net_interpreter.graph_entities import Place, Transition
 
 class PrintDebug(Debug):
   def __init__(self, parent):

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import pygraphviz as pgv
 import pydot
-from graph_entities import Edge
-from os_features import OperatingSystem
-from graph_entities import Place, Transition
-from state_graph import StateGraph
+from petri_net_interpreter.graph_entities import Edge
+from petri_net_interpreter.os_features import OperatingSystem
+from petri_net_interpreter.graph_entities import Place, Transition
+from petri_net_interpreter.state_graph import StateGraph
 
 
 class DummyPlace:
