@@ -86,23 +86,51 @@ perspective of a petri net.
   overhead when adding, killing, and switching between many threads that do not serve any
   purpose, so this utility should be used at the process level description.
 
+## Install
+Currently, the only way to install the repo is to install from source
+
+  1. clone the repo
+
+`git clone git@github.com:MarshallRawson/petri_net_interpreter.git`
+
+  1. navigate into the repo
+
+`cd petri_net_interpreter`
+
+  1. install the repo
+
+`sudo python3 setup.py install`
+
+  1. verify the install
+
+`make_petri_net`
+
+should give you the output:
+
+```
+usage: make_petri_net [-h] -dot DOT -header HEADER -source SOURCE -types TYPES
+                      -os OS [--debug DEBUG]
+                      [--state_graph_type STATE_GRAPH_TYPE]
+                      [--state_graph_output STATE_GRAPH_OUTPUT]
+```
+
 ## Examples
 ### Linux / Mac
   1. navigate to the `test` directory of this repo
 
-    cd test
+`cd tests/simple`
 
   1. compile the program (this will run the petri net interpreter)
 
-    make
+`make`
 
   1. view the state graph of the program
 
-    display ./objects/state_graph.png
+`display ./objects/state_graph.png`
 
   1. run the program
 
-    ./main
+`./main`
 
 
 ### Windows

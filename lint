@@ -1,0 +1,14 @@
+#!/bin/bash
+
+autopep8 --ignore E111 \
+         --diff \
+         --aggressive \
+         --aggressive \
+         --ignore=E111 \
+         ./petri_net_interpreter/*.py
+autopep8 --ignore E111 \
+         --in-place \
+         --aggressive \
+         --aggressive \
+         --ignore=E111 \
+         ./petri_net_interpreter/*.py
