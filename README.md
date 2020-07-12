@@ -114,11 +114,28 @@ usage: make_petri_net [-h] -dot DOT -header HEADER -source SOURCE -types TYPES
                       [--state_graph_output STATE_GRAPH_OUTPUT]
 ```
 
-## Examples
+## Simple Example
 ### Linux / Mac
+#### C
   1. navigate to the `test` directory of this repo
 
-`cd tests/simple`
+`cd tests/simple/c`
+
+  1. compile the program (this will run the petri net interpreter)
+
+`make`
+
+  1. view the state graph of the program
+
+`display ./objects/state_graph.png`
+
+  1. run the program
+
+`./main`
+#### C++
+  1. navigate to the `test` directory of this repo
+
+`cd tests/simple/cpp`
 
   1. compile the program (this will run the petri net interpreter)
 

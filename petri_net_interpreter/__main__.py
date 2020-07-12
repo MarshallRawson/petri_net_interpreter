@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
 import argparse
-from petri_net_interpreter.petri_net import PetriNet
 from petri_net_interpreter.os_features import Debug
 
 
@@ -56,8 +55,7 @@ def main():
     debug = Debug
 
     if os == 'G8RTOS':
-        from petri_net_interpreter.G8RTOS import G8RTOS
-        from petri_net_interpreter.G8RTOS import UartDebug, WifiDebug
+        from petri_net_interpreter.G8RTOS import G8RTOS, UartDebug, WifiDebug, PetriNet
         if args.debug:
             if args.debug == 'uart':
                 debug = UartDebug
@@ -67,13 +65,18 @@ def main():
                 raise Exception('only valid debug options are: uart, wifi')
         net = PetriNet(dot, header, source, types, G8RTOS(debug))
 
-    elif os == 'linux_static':
-        from petri_net_interpreter.linux_static import LinuxStatic, PrintDebug
+    elif os == 'linux_c' or os == 'linux_cpp':
+        if os == 'linux_c':
+            from petri_net_interpreter.linux_c import Linux, PrintDebug
+            from petri_net_interpreter.petri_net import PetriNet
+        elif os == 'linux_cpp':
+            from petri_net_interpreter.linux_cpp import Linux, PrintDebug, PetriNet
+
         if args.debug == 'print':
             debug = PrintDebug
         else:
             debug = Debug
-        net = PetriNet(dot, header, source, types, LinuxStatic(source, debug))
+        net = PetriNet(dot, header, source, types, Linux(source, debug=debug))
 
     else:
         raise Exception('%s is not a supported OS' % os)

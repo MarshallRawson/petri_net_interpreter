@@ -54,8 +54,10 @@ class Debug(OsFeature):
 
 
 class ProccessOutput(OsFeature):
-    def __init__(self, parent):
+    def __init__(self, parent, name):
         super().__init__(parent)
+        self.name = name
+        self.previous_names = []
 
     @abstractmethod
     def is_ready(self):
@@ -73,11 +75,19 @@ class ProccessOutput(OsFeature):
     def close(self):
         pass
 
+    def change_name(self, new_name):
+        self.previous_names.append(self.name)
+        self.name = new_name
+
+    def revert_name(self):
+        self.name = self.previous_names.pop()
+
 
 class InterProccessCommunication(ProccessOutput):
-    def __init__(self, place):
-        super().__init__(place)
-        self.name = str(place.node) + '_OUT_IPC'
+    def __init__(self, place, name=None):
+        if name is None:
+            name = place.name + '_OUT_IPC'
+        super().__init__(place, name)
 
     def give(self, val):
         return self.enqueue(val)
@@ -112,9 +122,10 @@ class InterProccessCommunication(ProccessOutput):
 
 
 class Semaphore(ProccessOutput):
-    def __init__(self, place, suffix='_OUT_SEMAPHORE'):
-        super().__init__(place)
-        self.name = str(place.node) + suffix
+    def __init__(self, place, name=None):
+        if name is None:
+            name = place.name + '_OUT_SEMAPHORE'
+        super().__init__(place, name)
 
     def give(self, val):
         return self.signal()
@@ -164,18 +175,22 @@ class OperatingSystem(ABC):
 
     @staticmethod
     def place_body_name(place):
-        return str(place.node) + '_body'
+        return place.name + '_body'
 
     @staticmethod
     def place_wrapper_name(place):
-        return str(place.node) + '_wrapper'
+        return place.name + '_wrapper'
 
-    @staticmethod
-    def header_start():
+    def header_file_start(self, net):
         return "#pragma once"
 
-    @staticmethod
-    def header_file_end():
+    def header_file_end(self, net):
+        return ''
+
+    def source_file_start(self, net):
+        return ''
+
+    def source_file_end(self, net):
         return ''
 
     @staticmethod

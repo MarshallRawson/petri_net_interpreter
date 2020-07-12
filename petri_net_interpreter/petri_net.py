@@ -15,6 +15,7 @@ class DummyPlace:
 
 class PetriNet(object):
     def __init__(self, dot_file, header_file, source_file, types_file, os):
+        self.name = header_file.split('/')[-1].split('.')[0]
         self.header_file = header_file
         self.source_file = source_file
         self.types_file = types_file
@@ -44,7 +45,8 @@ class PetriNet(object):
 
         # needed for generating C code
         dummy_place = DummyPlace(self.transition_semaphore())
-        self.transition_sem = self.os.sem(dummy_place, suffix='')
+        self.transition_sem = self.os.sem(
+            dummy_place, name=self.transition_semaphore())
 
     def parse_graph(self):
         # TODO: check for parallel edges
@@ -99,9 +101,9 @@ class PetriNet(object):
 
     def c_code(self):
         # make header
-        header = self.os.header_start() + '\n'
-        header += self.os.includes() + '\n'
+        header = self.os.includes() + '\n'
         header += '#include "' + self.types_file + '"\n'
+        header += self.os.header_file_start(self) + '\n'
         header += '// Places:\n'
         for place in self.places.values():
             header += place.c_header()
@@ -112,7 +114,7 @@ class PetriNet(object):
             header += transition.c_header()
 
         header += '\n// Start Thread\n'
-        header += 'void* ' + self.start_thread() + '();\n'
+        header += 'void* ' + self.start_thread() + '(void*);\n'
 
         header += '\n// Petri Net Init:\n'
         header += 'void ' + self.init_function() + '();\n'
@@ -121,12 +123,12 @@ class PetriNet(object):
         header += 'void ' + self.close_function() + '();\n'
 
         header += self.debug.prototype()
-        header += self.os.header_file_end() + '\n'
+        header += self.os.header_file_end(self) + '\n'
 
         # make source
-        source = ''
         source = self.os.includes() + '\n'
         source += '#include "' + self.header_file.split('/')[-1] + '"\n'
+        source += self.os.source_file_start(self)
         source += '// Places:\n'
         for place in self.places.values():
             source += place.c_source()
@@ -136,7 +138,7 @@ class PetriNet(object):
             source += v.c_source()
 
         source += '// Start Thread\n'
-        source += 'void* ' + self.start_thread() + '()\n'
+        source += 'void* ' + self.start_thread() + '(void* p)\n'
         source += '{\n'
         source += self.transition0() + '();\n'
         source += self.os.kill_self() + ';\n'
@@ -163,6 +165,7 @@ class PetriNet(object):
             source += place.close()
         source += self.transition_sem.close()
         source += '}\n'
+        source += self.os.source_file_end(self)
         return header, source
 
     def to_files(self):
