@@ -47,8 +47,8 @@ class PrintDebug(Debug):
 
 
 class MessageQueue(InterProccessCommunication):
-    def __init__(self, place):
-        super().__init__(place)
+    def __init__(self, place, name=None):
+        super().__init__(place, name)
         self.proj_file = place.parent.os.proj_file
         self.data_type = place.out_type
         self.buf = self.name + '_buf'
@@ -62,9 +62,9 @@ class MessageQueue(InterProccessCommunication):
     def size():
         return 32
 
-    def prototype(self):
-        ret = 'int ' + self.name + ';\n'
-        ret += 'struct msqid_ds ' + self.buf
+    def prototype(self, type_prefix=''):
+        ret = type_prefix + 'int ' + self.name + ';\n'
+        ret += type_prefix + 'struct msqid_ds ' + self.buf
         return ret
 
     def enqueue(self, var_name):
@@ -126,15 +126,17 @@ class MessageQueue(InterProccessCommunication):
         ret += var + ' = ' + self.buf + '.msg_qnum;\n'
         return ret
 
-    def initialize(self):
+    def initialize(self, key_name=None):
+        if key_name is None:
+            key_name = self.name + '_key'
         ret = '{\n'
-        ret += 'key_t ' + self.name + \
-            '_key = ftok("' + self.proj_file + '", proj_id++);\n'
+        ret += 'key_t ' + key_name + \
+            ' = ftok("' + self.proj_file + '", proj_id++);\n'
         ret += self.name + \
-            ' = msgget(' + self.name + '_key, 0600 | IPC_CREAT);\n'
-        ret += 'if (' + self.name + ' == -1)\n'
+            ' = msgget(' + key_name + ', 0600 | IPC_CREAT);\n'
+        ret += 'if (' + key_name + ' == -1)\n'
         ret += '{\n'
-        ret += '  perror("' + self.name + ' message queue creation failed");\n'
+        ret += '  perror("' + key_name + ' message queue creation failed");\n'
         ret += '  pthread_exit(NULL);\n'
         ret += '}\n'
         ret += self.get_stats()
@@ -151,8 +153,16 @@ class MessageQueue(InterProccessCommunication):
         ret += '}\n'
         return ret
 
+    def change_name(self, new_name):
+        self.previous_names.append((self.name, self.buf))
+        self.name = new_name
+        self.buf = new_name + '_buf'
 
-class LinuxSem(Semaphore):
+    def revert_name(self):
+        (self.name, self.buf) = self.previous_names.pop()
+
+
+class Semaphore(Semaphore):
     def __init__(self, place, **kwargs):
         super().__init__(place, **kwargs)
 
@@ -160,8 +170,8 @@ class LinuxSem(Semaphore):
         ret = self.get_value(var)
         return ret
 
-    def prototype(self):
-        return 'sem_t ' + self.name
+    def prototype(self, type_prefix=''):
+        return type_prefix + 'sem_t ' + self.name
 
     def initialize(self, val=0):
         ret = 'if (-1 == sem_init(&' + self.name + ', 0, ' + str(val) + '))\n'
@@ -209,16 +219,30 @@ class LinuxSem(Semaphore):
         return ret
 
 
-class LinuxStaticPlace(Place):
-    def __init__(self, node, parent):
-        super().__init__(node, parent)
+class Place(Place):
+    def __init__(
+            self,
+            node,
+            parent,
+            in_copy_name=None,
+            in_progress_name=None,
+            **kwargs):
+        super().__init__(node, parent, **kwargs)
         # we need this to signal the transition that we have copied the data and that it can kill self now
         # copying data is kinda the only way to solve this without dynamic
         # memory I think
         if self.in_type != 'void':
-            self.in_data_copy_sem = LinuxSem(
-                self, suffix='_IN_DATA_COPY_SEMAPHORE')
-        self.in_progress_sem = LinuxSem(self, suffix='_IN_PROGRESS_SEMAPHORE')
+            if in_copy_name is None:
+                self.in_data_copy_sem = parent.os.sem(
+                    self, name=self.name + '_IN_DATA_COPY_SEMAPHORE')
+            else:
+                self.in_data_copy_sem = parent.os.sem(self, name=in_copy_name)
+        if in_progress_name is None:
+            self.in_progress_sem = parent.os.sem(
+                self, name=self.name + '_IN_PROGRESS_SEMAPHORE')
+        else:
+            self.in_progress_sem = parent.os.sem(self,
+                                                 name=in_progress_name)
 
     def initialize(self):
         ret = self.output.initialize()
@@ -233,12 +257,12 @@ class LinuxStaticPlace(Place):
             ret += self.in_data_copy_sem.close()
         return ret
 
-    def c_header(self):
+    def c_header(self, type_prefix=''):
         h = '// ' + str(self.node) + '\n'
-        h += self.output.prototype() + ';\n'
+        h += self.output.prototype(type_prefix) + ';\n'
         if self.in_type != 'void':
-            h += self.in_data_copy_sem.prototype() + ';\n'
-        h += self.in_progress_sem.prototype() + ';\n'
+            h += self.in_data_copy_sem.prototype(type_prefix) + ';\n'
+        h += self.in_progress_sem.prototype(type_prefix) + ';\n'
         h += 'void* ' + self.wrapper_name + '(void* parg);\n'
         h += self.out_type + ' ' + self.body_name + '(' + self.in_type + ');\n'
         h += '\n'
@@ -276,7 +300,7 @@ class LinuxStaticPlace(Place):
 
         s += 'bool called_transition = false;\n'
         if self.out_type != 'void':
-            s += self.out_type + '* ' + self.name + ' = &ret.data;\n'
+            s += self.out_type + '* ' + str(self.node) + ' = &ret.data;\n'
         for edge in self.outs.values():
             s += 'if (' + edge.condition + ')\n'
             s += '{\n'
@@ -295,18 +319,18 @@ class LinuxStaticPlace(Place):
         return s
 
 
-class LinuxStaticTransition(Transition):
-    def __init__(self, node, parent):
-        super().__init__(node, parent)
+class Transition(Transition):
+    def __init__(self, node, parent, name=None):
+        super().__init__(node, parent, name=name)
 
     def c_header(self):
-        header = '// ' + str(self.node) + '\n'
-        header += 'void ' + str(self.node) + '();\n\n'
+        header = '// ' + self.name + '\n'
+        header += 'void ' + self.name + '();\n\n'
         return header
 
     def c_source(self):
-        s = '// ' + str(self.node) + '\n'
-        s += 'void ' + str(self.node) + '()\n'
+        s = '// ' + self.name + '\n'
+        s += 'void ' + self.name + '()\n'
         s += '{\n'
         s += '  ' + self.parent.transition_sem.wait()
         for edge in self.ins.values():
@@ -325,7 +349,7 @@ class LinuxStaticTransition(Transition):
             place = self.parent.places[str(edge.edge[1])]
             s += '    ' + place.in_progress_sem.signal()
             s += '    ' + \
-                self.parent.os.add_thread(place.wrapper_name, edge.var_name)
+                self.parent.os.add_thread(place, edge.var_name)
         s += '  }\n'
         for edge in self.outs.values():
             place = self.parent.places[str(edge.edge[1])]
@@ -336,13 +360,18 @@ class LinuxStaticTransition(Transition):
         return s
 
 
-class LinuxStatic(OperatingSystem):
-    def __init__(self, proj_file, debug=Debug):
+class Linux(OperatingSystem):
+    def __init__(self, proj_file,
+                 message_queue=MessageQueue,
+                 semaphore=Semaphore,
+                 place=Place,
+                 transition=Transition,
+                 debug=Debug):
         super().__init__(
-            MessageQueue,
-            LinuxSem,
-            LinuxStaticPlace,
-            LinuxStaticTransition,
+            message_queue,
+            semaphore,
+            place,
+            transition,
             debug)
         self.proj_file = proj_file
 
@@ -369,12 +398,14 @@ class LinuxStatic(OperatingSystem):
     def add_thread(cls, place, param):
         if not isinstance(place, str):
             name = str(place.node)
+            func_name = place.wrapper_name
         else:
             name = place
+            func_name = place
         ret = '{\n'
         ret += 'pthread_t ' + name + '_pthread;\n'
         ret += 'if (0 != pthread_create(&' + name + \
-            '_pthread, NULL, &' + place + ', '
+            '_pthread, NULL, &' + func_name + ', '
         if param == 'void':
             ret += 'NULL'
         else:

@@ -13,11 +13,14 @@ class GraphEntity(ABC):
 
 
 class Node(GraphEntity):
-    def __init__(self, node, parent):
+    def __init__(self, node, parent, name=None):
         self.node = node
         self.ins = {}
         self.outs = {}
-        self.name = str(node)
+        if name is None:
+            self.name = str(node)
+        else:
+            self.name = name
         super().__init__(parent)
 
     def add_out_edge(self, edge):
@@ -54,17 +57,17 @@ class Node(GraphEntity):
 
 
 class Place(Node):
-    def __init__(self, node, parent):
-        super().__init__(node, parent)
+    def __init__(self, node, parent, out_name=None, **kwargs):
+        super().__init__(node, parent, **kwargs)
         self.in_type = self.node.attr['xlabel'].split(
             self.parent.delim())[1].strip()
         self.out_type = self.node.attr['xlabel'].split(self.parent.delim())[
             0].strip()
         # if void out type, then use a sem as output instead of an ipc
         if self.out_type == 'void':
-            self.output = self.parent.os.sem(self)
+            self.output = self.parent.os.sem(self, name=out_name)
         else:
-            self.output = self.parent.os.ipc(self)
+            self.output = self.parent.os.ipc(self, name=out_name)
         self.body_name = self.parent.os.place_body_name(self)
         self.wrapper_name = self.parent.os.place_wrapper_name(self)
 
@@ -100,8 +103,8 @@ class Place(Node):
 
 
 class Transition(Node):
-    def __init__(self, node, parent):
-        super().__init__(node, parent)
+    def __init__(self, node, parent, name=None):
+        super().__init__(node, parent, name=name)
 
     @abstractmethod
     def c_header(self):

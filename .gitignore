@@ -1,7 +1,9 @@
 *__pycache__
-tests/*/objects/*
-!tests/*/objects/.gitkeep
-tests/*/main
+
+tests/*/*/objects/
+!tests/*/*/objects/.gitkeep
+tests/*/*/main
+
 *.swp
 dist
 build
