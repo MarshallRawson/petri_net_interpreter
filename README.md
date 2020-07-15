@@ -115,42 +115,103 @@ usage: make_petri_net [-h] -dot DOT -header HEADER -source SOURCE -types TYPES
 ```
 
 ## Simple Example
-### Linux / Mac
-#### C
-  1. navigate to the `test` directory of this repo
+
+### Dot
+The dot file that describes the net is:
+```
+digraph G {
+    splines = true;
+    start = 5;
+    transition_0 [shape="box", pos="3,13!"];
+
+    A[shape="oval", xlabel="a_t; void", pos="3, 11.5!"];
+    // A inputs
+    transition_0->A[xlabel="void"];
+
+    transition_2[shape="box", pos="0, 7!"];
+    transition_4->A[xlabel="void"];
+    transition_2->A[xlabel="void"];
+
+    // A outputs
+    transition_3[shape="box", pos="6, 9!"];
+    transition_1[shape="box" pos="0, 9!"];
+    A->transition_3[xlabel="!A->b.go"];
+    A->transition_1[xlabel=" A->b.go", pos="0, 9!"];
+
+    B[shape="oval", xlabel="void; b_t", pos="0, 8!"];
+    // B inputs
+    transition_1->B[xlabel="A->b"];
+    // B outputs
+    B->transition_2;
+
+    C[shape="oval", xlabel="void; c_t", pos="3, 8!"];
+    // C inputs
+    transition_1->C[xlabel="A->c"];
+    transition_3->C[xlabel="A->c"];
+    // C outputs
+    C->transition_2;
+    transition_4[shape="box", pos="6, 7!"];
+    C->transition_4;
+
+    D[shape="oval", xlabel="void; void", pos="6, 8!"];
+    // D inputs
+    transition_3->D[xlabel="void"];
+    // D outputs
+    D->transition_4;
+
+
+}
+```
+### Rendering
+The Dot file can be rendered as the following (for easier for a human to interpret):
+
+![simple](./docs/simple.png)
+
+
+### State Graph
+One of the biggest benefits of Petri Nets is that they are easy to make state graphs out of. This means that we can now have a complete state graph of any concurrent program made with this framework.
+
+This is what the state graph of the simple example looks like
+
+![state graph](./docs/state_graph.png)
+
+### Run it for yourself
+#### Linux / Mac
+##### C
+* navigate to the `test` directory of this repo
 
 `cd tests/simple/c`
 
-  1. compile the program (this will run the petri net interpreter)
+* compile the program (this will run the petri net interpreter)
 
 `make`
 
-  1. view the state graph of the program
+* view the state graph of the program
 
 `display ./objects/state_graph.png`
 
-  1. run the program
+* run the program
 
 `./main`
-#### C++
-  1. navigate to the `test` directory of this repo
+##### C++
+* navigate to the `test` directory of this repo
 
 `cd tests/simple/cpp`
 
-  1. compile the program (this will run the petri net interpreter)
+* compile the program (this will run the petri net interpreter)
 
 `make`
 
-  1. view the state graph of the program
+* view the state graph of the program
 
 `display ./objects/state_graph.png`
 
-  1. run the program
+* run the program
 
 `./main`
 
 
-### Windows
+#### Windows
   There is currently no Windows support
 
 ## TODOs (in order of priority)

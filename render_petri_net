@@ -1,0 +1,15 @@
+#!/bin/bash
+set -euo pipefail
+
+
+DOT_FILE=$1
+
+if [[ $# -eq 1 ]]; then
+  PNG_DESTINATION=`mktemp`
+else
+  PNG_DESTINATION=$2
+fi
+
+dot -Kfdp -n -Tpng -o $PNG_DESTINATION $DOT_FILE && display $PNG_DESTINATION
+
+
