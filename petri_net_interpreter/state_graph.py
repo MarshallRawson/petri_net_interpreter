@@ -20,16 +20,16 @@ class StateGraph(object):
         self.graph = pgv.AGraph(self.state_graph, directed=True)
 
     def explore_state(self, prev_state):
-        if str(prev_state) not in self.state_graph.keys():
-            self.state_graph[str(prev_state)] = []
+        if self.str(prev_state) not in self.state_graph.keys():
+            self.state_graph[self.str(prev_state)] = []
         next_states = self.next_states(prev_state)
         for state in next_states:
-            self.state_graph[str(prev_state)].append(str(state))
-            if str(state) not in self.state_graph.keys():
+            self.state_graph[self.str(prev_state)].append(self.str(state))
+            if self.str(state) not in self.state_graph.keys():
                 if sum(state.values()) > self.petri_net.max_tokens():
                     warnings.warn(
                         'State ' +
-                        str(state) +
+                        self.str(state) +
                         ' has more than the max number of tokens, this state will not be explored',
                         RuntimeWarning)
                 else:
@@ -59,3 +59,6 @@ class StateGraph(object):
     def to_png(self, png_file):
         self.graph.layout()
         self.graph.draw(png_file)
+
+    def str(self, state):
+        return str(state).replace(', ',',\n ')
