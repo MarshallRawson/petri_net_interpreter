@@ -1,0 +1,53 @@
+digraph G
+{
+  splines=true;
+  // A hypothetical mission example to complete the start gate challenge
+  transition_0 [shape="box", pos="12.5,102!"];
+
+  // A place to get the next Points of Interest(POIs) from the POI server
+  get_next_pois[shape="oval", xlabel="Pois; void", pos="15, 100!"];
+  transition_0 -> get_next_pois[xlabel="void"];
+
+  // A place to get the start get timeout from rosparam server
+  get_timeout[shape="oval", xlabel="ros::Duration; void", pos="11, 100!"];
+  transition_0 -> get_timeout[xlabel="void"];
+
+  // start the actual mission once we have ros params and stuff
+  start[shape="box", pos="5, 98!"];
+  get_next_pois->start;
+  get_timeout->start;
+
+  tried[shape="box", pos="5, 93!"];
+
+  // consult with ros nodes to locate the posts of the start gate,
+  //  return confidence if found or timeout
+  post_0[shape="oval", xlabel="PoseConf; tuple<Poi, ros::Duration>", pos="7, 95!"];
+  start -> post_0[
+      xlabel="tuple<Poi, ros::Duration>(get_next_pois->pois[0], *get_timeout)"];
+  post_0 -> tried;
+  post_1[shape="oval", xlabel="PoseConf; tuple<Poi, ros::Duration>", pos="13, 95!"];
+  start -> post_1[
+      xlabel="tuple<Poi, ros::Duration>(get_next_pois->pois[1], *get_timeout)"];
+  post_1 -> tried;
+
+  // utilize thread safe c++ pose editor library to command a move of the submarine
+  approach_pois[shape="oval", xlabel="void; Pois", pos="0, 95!"];
+  start -> approach_pois[xlabel="*get_next_pois"];
+  approach_pois -> tried;
+
+  // if at first you dont succeed, try try again
+  try_again[shape="box", pos="15, 95!"];
+  try_again -> get_timeout[xlabel="void"];
+  try_again -> get_next_pois[xlabel="void"];
+
+  // place to determine if we have succeded in the mission or need to try again
+  success[shape="oval" xlabel="PoseSuccess; tuple<PoseConf, PoseConf>", pos="10, 92!"];
+  tried -> success[xlabel="tuple<PoseConf, PoseConf>(*post_0, *post_1)"];
+  success -> proceed[xlabel="success->success"];
+  success -> try_again[xlabel="!success->success"];
+
+  // when successful, go_through the exit
+  go_through_gate[shape="oval", xlabel="void; Pose"];
+  proceed[shape="box", pos="5, 90!"];
+  proceed -> go_through_gate[xlabel="success->pose"];
+}

@@ -10,6 +10,6 @@ else
   PNG_DESTINATION=$2
 fi
 
-dot -Kfdp -n -Tpng -o $PNG_DESTINATION $DOT_FILE && display $PNG_DESTINATION
+dot -Kfdp -Tpng -o $PNG_DESTINATION $DOT_FILE && display $PNG_DESTINATION
 
 
