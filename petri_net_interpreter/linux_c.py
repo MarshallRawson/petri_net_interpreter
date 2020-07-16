@@ -377,7 +377,8 @@ class Linux(OperatingSystem):
 
     @staticmethod
     def includes():
-        ret = '#include <stdbool.h>\n' +\
+        ret = '#define _GNU_SOURCE\n' + \
+              '#include <stdbool.h>\n' +\
               '#include <string.h>\n' +\
               '#include <pthread.h>\n' +\
               '#include <sys/types.h>\n' +\
@@ -415,17 +416,17 @@ class Linux(OperatingSystem):
         ret += '  perror("Failed to add thread: ' + name + '");\n'
         ret += '  pthread_exit(NULL);\n'
         ret += '}\n'
+        ret += 'if (0 != pthread_setname_np(' + name + \
+            '_pthread, "' + name[:15] + '"))\n'
+        ret += '{\n'
+        ret += '  perror("Failed to name thread: ' + name + '");\n'
+        ret += '  pthread_exit(NULL);\n'
+        ret += '}\n'
         ret += 'if (0 != pthread_detach(' + name + '_pthread))\n'
         ret += '{\n'
         ret += '  perror("Failed to detach thread: ' + name + '");\n'
         ret += '  pthread_exit(NULL);\n'
         ret += '}\n'
-        ret += '//if (0 != pthread_setname_np(' + name + \
-            '_pthread, "' + name + '"))\n'
-        ret += '//{\n'
-        ret += '//  perror("Failed to name thread: ' + name + '");\n'
-        ret += '//  pthread_exit(NULL);\n'
-        ret += '//}\n'
         ret += '}\n'
         return ret
 
