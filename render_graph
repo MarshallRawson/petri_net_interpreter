@@ -1,15 +1,33 @@
 #!/bin/bash
 set -euo pipefail
 
+usage()
+{
+  echo "Usage: render_graph [DOT File] Optional:[Output File PNG]"
+}
 
-DOT_FILE=$1
+if [[ $# -eq 0 ]]; then
+  usage
+  exit 1
+fi
+
+for arg in $@
+do
+  if [[ $arg == "-h" ]] || [[ $arg == "--help" ]]; then
+    usage
+    exit 1
+  fi
+done
+
+if [[ $# -gt 0 ]]; then
+  DOT_FILE=$1
+fi
 
 if [[ $# -eq 1 ]]; then
   PNG_DESTINATION=`mktemp`
+  trap "rm -rf $PNG_DESTINATION" EXIT
 else
   PNG_DESTINATION=$2
 fi
 
 dot -Kfdp -Tpng -o $PNG_DESTINATION $DOT_FILE && display $PNG_DESTINATION
-
-
