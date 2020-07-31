@@ -403,14 +403,20 @@ class Linux(OperatingSystem):
         else:
             name = place
             func_name = place
-        ret = '{\n'
+
+        ret = ''
+        if param == 'void':
+            param_name = 'NULL'
+        else:
+            ret += place.in_type + ' ' + name + '_in_data = '
+            ret += param + ';\n'
+            param_name = '&' + name + '_in_data'
+
+        ret += '{\n'
         ret += 'pthread_t ' + name + '_pthread;\n'
         ret += 'if (0 != pthread_create(&' + name + \
             '_pthread, NULL, &' + func_name + ', '
-        if param == 'void':
-            ret += 'NULL'
-        else:
-            ret += '&' + param
+        ret += param_name
         ret += '))\n'
         ret += '{\n'
         ret += '  perror("Failed to add thread: ' + name + '");\n'
