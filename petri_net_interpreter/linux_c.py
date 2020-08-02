@@ -341,7 +341,7 @@ class Transition(Transition):
             place = self.parent.places[str(edge.edge[0])]
             s += '(' + str(place.node) + '_is_ready) &&\n'
         s += '  true)\n'
-        s += '  {\n'
+        s += '{\n'
         for edge in self.ins.values():
             place = self.parent.places[str(edge.edge[0])]
             s += '    ' + place.output.take(str(place.node))
@@ -350,11 +350,11 @@ class Transition(Transition):
             s += '    ' + place.in_progress_sem.signal()
             s += '    ' + \
                 self.parent.os.add_thread(place, edge.var_name)
-        s += '  }\n'
         for edge in self.outs.values():
             place = self.parent.places[str(edge.edge[1])]
             if hasattr(place, 'in_data_copy_sem'):
                 s += place.in_data_copy_sem.wait()
+        s += '}\n'
         s += '  ' + self.parent.transition_sem.signal()
         s += '}\n\n'
         return s
