@@ -212,7 +212,7 @@ class Semaphore(Semaphore):
         return ret
 
     def close(self):
-        ret = 'if (-1 == sem_close(&' + self.name + '))\n'
+        ret = 'if (-1 == sem_destroy(&' + self.name + '))\n'
         ret += '{\n'
         ret += '  perror("Failed to close ' + self.name + '");\n'
         ret += '}\n'
