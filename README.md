@@ -1,3 +1,9 @@
+# DEPRECATED
+
+This Repo has been superseded by [nt-petri-net](https://github.com/MarshallRawson/nt-petri-net).
+
+
+
 # Petri Net Interpreter
 
 This is a program that is meant to interpret a Petri Net written in
